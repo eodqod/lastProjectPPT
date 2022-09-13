@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<title>예약 페이지</title>
+<!-- axicon 사용하기 -->
+<link rel="stylesheet" type="text/css" href="axicon/axicon.min.css" />
+<!-- 부트스트랩을 사용하기 위한 준비 시작 -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+	rel="stylesheet">
+<script
+	src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+<script
+	src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<!-- 부트스트랩을 사용하기 위한 준비 끝 -->
+<!-- 달력에 사용을 위한것 -->
+<link rel="stylesheet"
+	href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<!-- <link rel="stylesheet" href="/resources/demos/style.css"> -->
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<!-- 사용자 정의 자바스크립트 함수를 추가한다 -->
+<script type="text/javascript" src="js/commons.js"></script>
+<!-- 날짜 계산  -->
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script type="text/javascript">
+var roomList = []
+$(function() {
+	$.ajax('/api/list?roomidx='+ [[${roomidx}]],{
+		success : function(data){
+			// alert(data);
+			result = "";
+			$(data).each(function(i, element) {
+				//result += element['startday'] + ":" + element['endday'] +"\n"
+				var date1 = moment(element['startday']);
+				var date2 = moment(element['endday']);
+				var x = date2.diff(date1, "days");
+				
+				var sd = moment(date1).format("YYYY-M-D");
+				roomList.push(sd);	
+				
+				for(var y=0; y<x-1; y++){
+					result = date1.add(1, "days").format();
+					date = moment(result).format("YYYY-M-D");
+	
+				roomList.push(date);					
+				}		
+			});
+			//alert(roomList);
+		}
+	});
+	
+	$.datepicker.setDefaults({ 
+      /////////////////////////////////////공통설정///////////////////////////////////////
+            dateFormat: 'yy-mm-dd' //Input Display Format 변경
+            //,showOtherMonths: true //빈 공간에 현재월의 앞뒤월의 날짜를 표시
+           ,showMonthAfterYear:true //년도 먼저 나오고, 뒤에 월 표시
+            //,changeYear: true //콤보박스에서 년 선택 가능
+            //,changeMonth: true //콤보박스에서 월 선택 가능                
+            //,showOn: "both" //button:버튼을 표시하고,버튼을 눌러야만 달력 표시 ^ both:버튼을 표시하고,버튼을 누르거나 input을 클릭하면 달력 표시  
+            //,buttonImage: "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif" //버튼 이미지 경로
+            //,buttonImageOnly: true //기본 버튼의 회색 부분을 없애고, 이미지만 보이게 함
+            //,buttonText: "달력선택" //버튼에 마우스 갖다 댔을 때 표시되는 텍스트                
+            ,yearSuffix: "년" //달력의 년도 부분 뒤에 붙는 텍스트
+            //,monthNamesShort: ['1','2','3','4','5','6','7','8','9','10','11','12'] //달력의 월 부분 텍스트
+           ,monthNamesShort: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'] //달력의 월 부분 텍스트
+           ,monthNames: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'] //달력의 월 부분 Tooltip 텍스트
+           ,dayNamesMin: ['일','월','화','수','목','금','토'] //달력의 요일 부분 텍스트
+           ,dayNames: ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'] //달력의 요일 부분 Tooltip 텍스트
+           ,minDate: "-0" //최소 선택일자(-1D:하루전, -1M:한달전, -1Y:일년전)
+           ,maxDate: "+3M" //최대 선택일자(+1D:하루후, -1M:한달후, -1Y:일년후)  
+		   ,numberOfMonths: [1,2] // 달력 병렬,직렬 추가 기능
+		   ,beforeShowDay: disableSomeDay // 특정 날짜 제거
+     });
+	/////////////////////////////////////개인설정///////////////////////////////////////
+	$("#startday").datepicker({ // 입실일
+		 setDate: "today"
+		,onClose: function( selectedDate ) {    
+            $("#endday").datepicker( "option", "minDate", selectedDate );
+        }  
+	});
+	
+	$("#endday").datepicker({ // 퇴실일
+		 setDate: "+1D"
+	    ,onClose: function( selectedDate ) {    
+             $("#startday").datepicker( "option", "maxDate", selectedDate );
+         }   
+	});
+});
+// 제외할 날짜들 배열
+//var disabledDays = ["2022-9-10","2022-9-01","2022-9-2" ];
+var disabledDays = roomList;
+//날짜를 나타내기 전에 실행할 함수
+function disableSomeDay(date) {
+    var year = date.getFullYear();
+    var month = date.getMonth();
+    var date = date.getDate();
+    // 배열에 해당하는 날짜는 0번째 index에 false를 담아 리턴한다.
+    for (i = 0; i < disableSomeDay.length; i++) {
+        if($.inArray(year + '-' +(month+1) + '-' + date,disabledDays) != -1) {
+            return [false];
+        }
+    }
+    return [true];
+}
+
+function reservCheck( ){ //reservCheck(sessionID){
+	var id = document.getElementById("id").value;
+	var roomidx = document.getElementById("roomidx").value;
+	var name = document.getElementById("name").value;
+	var roomname = document.getElementById("roomname").value;
+    var total = document.getElementById("total").value;
+	var startday = document.getElementById("startday").value;
+	var endday = document.getElementById("endday").value;
+	var mode = document.getElementById("mode").value;
+	var date1 = moment(startday);
+	var date2 = moment(endday);
+	var x = date2.diff(date1, "days");
+	var list =[]
+	
+	var sd = moment(date1).format("YYYY-M-D");
+	if(sd[5]=='0'){
+		sd = sd.substr(0, 5) + sd.substring(6)
+	}
+	list.push(sd);	
+	
+	for(var y=0; y<x-1; y++){
+		result = date1.add(1, "days").format();
+		date = moment(result).format("YYYY-M-D");
+
+	list.push(date);					
+	}
+	var overlap = list.filter(it => roomList.includes(it));
+	
+	if(startday==null||startday==""){
+		alert("입실 날짜를 선택해 주세요.");
+		return false;
+	}else if(endday==null||endday==""){
+		alert("퇴실 날짜를 선택해 주세요.");
+		return false;
+	}else if(total==null||total==""||total=="인원수"){
+		alert("인원수를 선택해 주세요.");
+		return false;
+	}else if(startday===endday){
+		alert("입실/퇴실 날짜가 같습니다. 다시 확인해 주세요.");
+		return false;
+	}else if(overlap.length>0){	
+		alert("이미 예약된 날짜가 포함되어 있습니다. 다시 확인해 주세요.");
+		return false;		
+	}
+   // alert("id=" + id + "   roomidx=" + roomidx +"  인원수=" + total + "  예약시작날짜= " + startday +"  예약퇴실날짜=" + endday ) ;
+	
+    var obj = {
+			"id" : id,
+			"roomidx" : roomidx,
+			"name" : name,
+			"roomname" : roomname,
+			"total" : total,
+			"startday" : startday,
+			"endday" : endday,
+			"mode" : mode
+	};
+	 //alert(JSON.stringify(obj));
+	$.ajax("reservationupdate",
+		{
+		type : "POST",  
+		data : obj,
+		success : function(data){
+			//alert("결과 : " + data);
+			alert("예약 성공");
+			location.href=data
+			
+		},
+		error : function(err){
+			alert("예약 실패");
+		}
+	});
+}
+
+// 옵션 갯수
+function count(type)  {
+  // 결과를 표시할 element
+  const resultElement = document.getElementById('result');
+  
+  // 현재 화면에 표시된 값
+  let number = resultElement.innerText;
+  
+  // 더하기/빼기
+  if(type === 'plus') {
+    number = parseInt(number) + 1;
+  }else if(type === 'minus')  {
+   	  if(number <= 0){
+   		  return false;
+   	  }
+   	 number = parseInt(number) - 1;
+  }
+  
+  // 결과 출력
+  resultElement.innerText = number;
+}
+
+
+function count2(type)  {
+  // 결과를 표시할 element
+  const resultElement = document.getElementById('result2');
+  
+  // 현재 화면에 표시된 값
+  let number2 = resultElement.innerText;
+  
+  // 더하기/빼기
+  if(type === 'plus') {
+    number2 = parseInt(number2) + 1;
+  }else if(type === 'minus')  {
+   	  if(number2 <= 0){
+   		  return false;
+   	  }
+   	 number2 = parseInt(number2) - 1;
+  }
+  
+  // 결과 출력
+  resultElement.innerText = number2;
+}
+
+
+function count3(type)  {
+  // 결과를 표시할 element
+  const resultElement = document.getElementById('result3');
+  
+  // 현재 화면에 표시된 값
+  let number3 = resultElement.innerText;
+  
+  // 더하기/빼기
+  if(type === 'plus') {
+    number3 = parseInt(number3) + 1;
+  }else if(type === 'minus')  {
+   	  if(number3 <= 0){
+   		  return false;
+   	  }
+   	 number3 = parseInt(number3) - 1;
+  }
+  
+  // 결과 출력
+  resultElement.innerText = number3;
+}
+
+// 슬라이드 효과
+ $(function () {
+        $("#slideToggleBtn").on("click", function() {
+            $("#divBox").slideToggle("fast"); // 2초에 걸쳐서 진행
+        })
+    })
+ $(function () {
+        $("#slideToggleBtn2").on("click", function() {
+            $("#divBox2").slideToggle("fast"); // 2초에 걸쳐서 진행
+        })
+    })
+ $(function () {
+        $("#slideToggleBtn3").on("click", function() {
+            $("#divBox3").slideToggle("fast"); // 2초에 걸쳐서 진행
+        })
+    })
+ $(function () {
+        $("#slideToggleBtn4").on("click", function() {
+            $("#divBox4").slideToggle("fast"); // 2초에 걸쳐서 진행
+        })
+    })
+ $(function () {
+        $("#slideToggleBtn5").on("click", function() {
+            $("#divBox5").slideToggle("fast"); // 2초에 걸쳐서 진행
+        })
+    })
+ // 체크 박스 전체 선택  
+	$(function() {
+		$("#cbx_chkAll").click(function() {
+			if($("#cbx_chkAll").is(":checked")) $("input[name=chk]").prop("checked", true);
+			else $("input[name=chk]").prop("checked", false);
+	});
+
+	$("input[name=chk]").click(function() {
+		var total = $("input[name=chk]").length;
+		var checked = $("input[name=chk]:checked").length;
+
+		if(total != checked) $("#cbx_chkAll").prop("checked", false);
+		else $("#cbx_chkAll").prop("checked", true); 
+	});
+});
+
+// 필수항목 체크
+ $(document).ready(function () {
+     $('#cbx_chkAll').on('input change', function () {
+	 var cbx_chkAll=$("#cbx_chkAll").prop("checked");
+         if (cbx_chkAll) {
+        	 if ($('#answer1').val() != '') {
+        		 if ($('#answer2').val() != '') {
+        			 if ($('#answer3').val() != '') {
+        				 if ($('#answer4').val() != '') {
+        					 if ($('#answer5').val() != '') {
+        						 if ($('#answer6').val() != '') {
+        							 if ($('#info1').val() != '') {
+        								 if ($('#info2').val() != '') {
+        									 $('#reservButton').prop('disabled', false); 
+        					             }  
+        				             }    
+        			             }  
+        		             }   
+        	             }  
+                     }
+                 }
+             }   
+         }
+         else {
+             $('#reservButton').prop('disabled', true);
+         }
+     });
+ });
+</script>
+<style type="text/css">
+
+/* 달력에 관련된 CSS.*/
+.ui-widget-header {
+	border: 0px solid #dddddd;
+	background: #fff;
+}
+
+.ui-datepicker-calendar>thead>tr>th {
+	font-size: 14px !important;
+}
+
+.ui-datepicker .ui-datepicker-header {
+	position: relative;
+	padding: 10px 0;
+}
+
+.ui-state-default, .ui-widget-content .ui-state-default,
+	.ui-widget-header .ui-state-default, .ui-button, html .ui-button.ui-state-disabled:hover,
+	html .ui-button.ui-state-disabled:active {
+	border: 0px solid #c5c5c5;
+	background-color: transparent;
+	font-weight: normal;
+	color: #454545;
+	text-align: center;
+}
+
+.ui-datepicker .ui-datepicker-title {
+	margin: 0 0em;
+	line-height: 16px;
+	text-align: center;
+	font-size: 14px;
+	padding: 0px;
+	font-weight: bold;
+}
+
+.ui-datepicker {
+	display: none;
+	background-color: #fff;
+	border-radius: 4px;
+	margin-top: 10px;
+	margin-left: 0px;
+	margin-right: 0px;
+	padding: 20px;
+	padding-bottom: 10px;
+	width: 300px;
+	box-shadow: 10px 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.ui-widget.ui-widget-content {
+	border: 1px solid #eee;
+}
+
+#datepicker:focus>.ui-datepicker {
+	display: block;
+}
+
+.ui-datepicker-prev, .ui-datepicker-next {
+	cursor: pointer;
+}
+
+.ui-datepicker-next {
+	float: right;
+}
+
+.ui-state-disabled {
+	cursor: auto;
+	color: hsla(0, 0%, 80%, 1);
+}
+
+.ui-datepicker-title {
+	text-align: center;
+	padding: 10px;
+	font-weight: 100;
+	font-size: 20px;
+}
+
+.ui-datepicker-calendar {
+	width: 100%;
+}
+
+.ui-datepicker-calendar>thead>tr>th {
+	padding: 5px;
+	font-size: 20px;
+	font-weight: 400;
+}
+
+.ui-datepicker-calendar>tbody>tr>td>a {
+	color: #000;
+	font-size: 12px !important;
+	font-weight: bold !important;
+	text-decoration: none;
+}
+
+.ui-datepicker-calendar>tbody>tr>.ui-state-disabled:hover {
+	cursor: auto;
+	background-color: #fff;
+}
+
+.ui-datepicker-calendar>tbody>tr>td {
+	border-radius: 100%;
+	width: 44px;
+	height: 30px;
+	cursor: pointer;
+	padding: 5px;
+	font-weight: 100;
+	text-align: center;
+	font-size: 12px;
+}
+
+.ui-datepicker-calendar>tbody>tr>td:hover {
+	background-color: transparent;
+	opacity: 0.6;
+}
+
+.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover,
+	.ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus,
+	.ui-button:hover, .ui-button:focus {
+	border: 0px solid #cccccc;
+	background-color: transparent;
+	font-weight: normal;
+	color: #2b2b2b;
+}
+
+.ui-widget-header .ui-icon {
+	background-image: url('/img/btns.png');
+}
+
+.ui-icon-circle-triangle-e {
+	background-position: -20px 0px;
+	background-size: 36px;
+}
+
+.ui-icon-circle-triangle-w {
+	background-position: -0px -0px;
+	background-size: 36px;
+}
+
+.ui-datepicker-calendar>tbody>tr>td:first-child a {
+	color: red !important;
+}
+
+.ui-datepicker-calendar>tbody>tr>td:last-child a {
+	color: #0099ff !important;
+}
+
+.ui-datepicker-calendar>thead>tr>th:first-child {
+	color: red !important;
+}
+
+.ui-datepicker-calendar>thead>tr>th:last-child {
+	color: #0099ff !important;
+}
+
+.ui-state-highlight, .ui-widget-content .ui-state-highlight,
+	.ui-widget-header .ui-state-highlight {
+	border: 0px;
+	background: #f1f1f1;
+	border-radius: 50%;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.inp {
+	padding: 10px 10px;
+	background-color: #f1f1f1;
+	border-radius: 4px;
+	border: 0px;
+}
+
+.inp:focus {
+	outline: none;
+	background-color: #eee;
+}
+
+/* 예약 페이지에 관련된 CSS. */
+table { width: 1000px; margin: auto; padding: 5px;}
+	th {padding: 5px; border: 1px solid gray; background-color: #E4E6EF; color: black; text-align: center; t}
+	td {padding: 5px; border: 1px solid gray; text-align: center;}
+	.title {border: none; font-size: 20pt; text-align: center;}
+	.sub_title {border: none; text-align: right;}
+	
+.flex-div {
+	width: 100%;
+	height: auto;
+	background-color: #E4E6EF;
+	display: flex;
+	justify-content: center;
+}
+
+.outer-div {
+	width: 60%;
+	height: 100%;
+	background-color: #F3F6F9;
+	justify-content: center;
+}
+
+.roominfo-div {
+	background: #fff;
+	width: 98%;
+	height: 12%;
+	margin: 1%;
+	border-radius: 15px;
+	padding: 1%;
+	box-sizing: border-box;
+	
+}
+
+.info-div {
+	background: #E4E6EF;
+	width: 98%;
+	height: 50%;
+	margin: 1%;
+	border-radius: 15px;
+	padding-left: 1%;
+	padding-top: 1%;
+}
+
+input{
+	  border-radius:5px; // 테두리 둥글게 5px 값을 준다
+}
+#divBox{
+ 	display: none; 
+ 	background: #E4E6EF;
+	width: 98%;
+	height: 50%;
+	margin: 1%;
+	border-radius: 15px;
+	padding-left: 1%;
+	padding-top: 1%;
+}
+#divBox2{
+ 	display: none; 
+ 	background: #E4E6EF;
+	width: 98%;
+	height: 50%;
+	margin: 1%;
+	border-radius: 15px;
+	padding-left: 1%;
+	padding-top: 1%;
+}
+#divBox3{
+ 	display: none; 
+ 	background: #E4E6EF;
+	width: 98%;
+	height: 50%;
+	margin: 1%;
+	border-radius: 15px;
+	padding-left: 1%;
+	padding-top: 1%;
+}
+#divBox4{
+ 	display: none; 
+ 	background: #E4E6EF;
+	width: 98%;
+	height: 50%;
+	margin: 1%;
+	border-radius: 15px;
+	padding-left: 1%;
+	padding-top: 1%;
+}
+#divBox5{
+ 	display: none; 
+ 	background: #E4E6EF;
+	width: 98%;
+	height: 50%;
+	margin: 1%;
+	border-radius: 15px;
+	padding-left: 1%;
+	padding-top: 1%;
+}
+</style>
+</head>
+<body>
+	<div class="flex-div">
+		<div class="outer-div">
+			<div class="roominfo-div" style="height: 100%" >
+				<h3 th:text="|[${cvo.name}] ${rvo.roomname}|" style="font-weight: bolder"></h3>
+				<div class="info-div" style="padding: 1%" >
+					<div id="main_reservation">
+						<div class="main_table_reservation">
+							<span class="main_reserv3"> <label for="from"
+								style="font-weight: bolder">입실날짜</label> <input type="text"
+								th:id="startday" name="from" style="border: 1px solid #C6C6C6"
+								autocomplete="off"> <label for="to"
+								style="font-weight: bolder">~ 퇴실날짜</label> <input type="text"
+								th:id="endday" name="to" style="border: 1px solid #C6C6C6"
+								autocomplete="off">
+							</span> <span class="main_reserv4"> <select th:id="total">
+									<option selected="selected">인원수</option>
+									<th:block
+										th:each="num : ${#numbers.sequence(rvo.minpeople, rvo.maxpeople)}">
+										<option th:value="${num}" th:text="${num}">number</option>
+									</th:block>
+							</select>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="roominfo-div" style="height: 45%">
+				<div>
+					<h5><b>&nbsp;&nbsp; 옵션 선택</b></h5>
+					<hr style="border-top: 2px dashed #ddd;"/>
+				<div>
+					 	<table style="width: 100%">
+					 		<tr>
+								<th width="75%">옵션</th>
+								<th width="25%">수량</th>
+							</tr>
+							<tr>
+								<td>
+									<h5 style="text-align: left;">
+									<b>바비큐 그릴 & 숯 비용 (현장 현금 결제) - 0원 <b style="color: red;">(현장결제)</b></b><br />
+									</h5> 
+										<div style="text-align: left;">
+										1set 20,000원 현장결제<br />
+										2~3인용<br />
+										제공(참숯,번개탄,석쇠,장갑)<br />
+										대여(그릴, 토치)
+										</div>
+								</td>
+								<td>
+									<input type='button'onclick='count("minus")' value='-'/>
+									<span id='result'>0</span>
+									<input type='button'onclick='count("plus")' value='+'/>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<h5 style="text-align: left;">
+									<b>장작 13,000원 (현장 현금 결제) - 0원 <b style="color: red;">(현장결제)</b></b><br />
+									</h5> 
+										<div style="text-align: left;">
+										- 장작 10kg 1단 13,000원 현장 결제
+										</div>
+								</td>
+								<td>
+									<input type='button'onclick='count2("minus")' value='-'/>
+									<span id='result2'>0</span>
+									<input type='button'onclick='count2("plus")' value='+'/>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<h5 style="text-align: left;">
+									<b>캠프 인원 추가 1인 1만원 (현장 결제) - 0원 <b style="color: red;">(현장결제)</b></b><br />
+									</h5> 
+										<div style="text-align: left;">
+										- 기준 인원 2인 초과시 1인당 1만원 현장 결제
+										</div>
+								</td>
+								<td>
+									<input type='button'onclick='count3("minus")' value='-'/>
+									<span id='result3'>0</span>
+									<input type='button'onclick='count3("plus")' value='+'/>
+								</td>
+							</tr>
+					 	</table>
+					</div>
+				</div>
+			</div>
+			<div class="roominfo-div" style="height: 150%">
+				<div>
+					<h5><b>&nbsp;&nbsp; 예약자 질의 응답</b></h5>
+					<hr style="border-top: 2px dashed #ddd;"/>
+					<form action=""></form>
+					<strong style="font-size: 15px;">1. 본인포함 총 몇분이 방문하시나요?<b style="color: red;">(필수)</b></strong>
+					<br />
+					<span >
+						<input type="text" style="width: 100%" id="answer1">
+					</span>
+					<strong style="font-size: 15px;">2. 무인주차 차단기 입퇴실 관리를 위해 차량번호 등록해야 합니다. 1사이트당 차량등록은 1대만 가능합니다. (등록차량 외 입실하실 수 없습니다) 반드시 차량번호 전체를 정확하게 기재해 주시기 바랍니다. (예, 00오 1234)<b style="color: red;">(필수)</b></strong>
+					<span >
+						<input type="text" style="width: 100%" id="answer2">
+					</span>
+					<strong style="font-size: 15px;">3. 차량번호 정보 제공에 동의하시나요?<b style="color: red;">(필수)</b></strong>
+					<span >
+						<select id="answer3" style="width: 100%; height: 30px" >
+								<option selected="selected" value="">선택해 주세요.</option>							
+								<option value="1">네 동의합니다.</option>
+						</select>
+					</span>
+					<strong style="font-size: 15px;">4. ***취소/환불 규정 및 예약변경 불가 안내*** 1. 취소수수료는 예약시점과 관계없이 '입실일로부터 남은 날짜' 기준으로 부과되며, 입실일 기준 10일 이내에 취소 시 (예약 후 바로 취소해도) 취소수수료 발생합니다. (결제 전 취소/환불 규정 필독) 2. '상품 변경', '우천 및 개인사정으로 날짜 변경' 불가하며, 필요하신 경우 직접 취소 후 재예약하셔야 합니다. 동의하시나요?<b style="color: red;">(필수)</b></strong>
+						<select id="answer4" style="width: 100%; height: 30px" >
+								<option selected="selected" value="">선택해 주세요.</option>							
+								<option value="1">네 동의합니다.</option>
+						</select>
+					<strong style="font-size: 15px;">5. ***중복 예약 및 요금 오류 예약 취소 안내*** 1. 중복 예약 : 실시간 예약의 특성상 동일한 상품에 중복 예약 발생할 수 있으며, 먼저 완료된 예약 건에 우선권이 있으므로 이후 중복 예약 건은 취소될 수 있습니다. (위약금 없음) 2. 요금 오류 : 성수기 요금의 확정 전 또는 잘못 등록된 요금으로 요금 오류 발생 시, 고객센터를 통한 안내 후 예약 취소 처리되며 정상 요금으로 재예약하실 수 있습니다. 동의하시나요?<b style="color: red;">(필수)</b></strong>
+						<select id="answer5" style="width: 100%; height: 30px" >
+								<option selected="selected" value="">선택해 주세요.</option>							
+								<option value="1">네 동의합니다.</option>
+						</select>
+					<strong style="font-size: 15px;">6. 본 시설의 이용수칙 및 환불규정에 동의하시나요?<b style="color: red;">(필수)</b></strong>
+						<select id="answer6" style="width: 100%; height: 30px" >
+								<option selected="selected" value="">선택해 주세요.</option>							
+								<option value="1">네 동의합니다.</option>
+						</select>
+						<br />
+						
+				</div>
+			</div>
+			<div class="roominfo-div" style="height: 45%">
+				<div>
+					<h5><b>&nbsp;&nbsp; 예약자 정보</b></h5>
+					<hr style="border-top: 2px dashed #ddd;"/>
+					<strong style="font-size: 18px;">&nbsp; 예약자명<b style="color: red;">(필수)</b></strong>
+					<br />
+					<span >
+						<input type="text" id="info1" style="width: 100%; height: 40px" placeholder="홍길동">
+					</span>
+					<h6 style="color: silver; margin-bottom: 15px">예약확인을 위해 실명을 입력해주세요.</h6>
+					
+					<strong style="font-size: 18px;">&nbsp; 휴대폰 번호<b style="color: red;">(필수)</b></strong>
+					<br />
+					<span >
+						<input type="text" id="info2" style="width: 100%; height: 40px" placeholder="010123455678">
+					</span>
+					<h6 style="color: silver; margin-bottom: 15px">예약관련 정보 수신을 위해 휴대폰 번호를 입력해 주세요.</h6>
+					
+					<strong style="font-size: 18px;">&nbsp; 이메일 (선택)</strong>
+					<br />
+					<span >
+						<input type="text" style="width: 100%; height: 40px" placeholder="hongildong@email.com">
+					</span>
+					<h6 style="color: silver; margin-bottom: 15px">결제정보(영수증 등) 수신을 위해 이메일 주소를 입력해 주세요.</h6>
+					
+					<strong style="font-size: 18px;">&nbsp; 예약요청사항 (선택)</strong>
+					<br />
+					<span >
+						<input type="text" style="width: 100%; height: 100px">
+					</span>
+					<h6 style="color: silver; margin-bottom: 15px">숙박업체에 전달할 예약요청사항을 입력해 주세요.</h6>				
+				</div>
+			</div>
+			<div class="roominfo-div" style="height: 45%">
+					<h5><b>&nbsp; 주의사항 및 약관 동의</b></h5>
+					<hr style="border-top: 2px dashed #ddd;"/>
+					<div style="display: flex;">
+						<input type="checkbox" id="cbx_chkAll">
+						<h6><b>&nbsp; 전체 이용 약관에 동의합니다.</b></h6>
+					</div>
+				
+   					<div>
+   						<div style="display: flex;">
+							<input type="checkbox" name="chk">
+							<h6 id="slideToggleBtn"><b>&nbsp; 취소 및 환불 수수료에 동의합니다. ▼ </b></h6>
+						</div>
+   					</div>
+   					
+    				<div id="divBox" style="font-size: 12px">
+    					- 예약취소는 구매한 사이트 "MYPAGE" 혹은 "예약확인/취소"에서 가능합니다.
+						<br>- 취소수수료는 예약시점과는 무관하게 '입실일로부터 남은 날짜' 기준으로 부과됩니다. 신중한 예약바랍니다.
+						<br>- 예약 이용일 변경 불가합니다. (취소수수료 확인 후) 기존 예약건 취소 및 재예약하셔야 합니다.
+						<br>- 중복예약 취소, 업체 요청에 의한 취소, 법령에 의한 취소 등은 반드시 캠핑톡 고객센터(070-4336-1824) 또는 해당 숙소를 통하여 도움을 받으십시오.
+						<br>- 미성년자는 예약이 불가하며, 보호자 동반 없이 이용 불가합니다.
+						<br>- ※ 기상 상황 및 코로나 등 전염병 관련 예약 취소 안내
+						<br>- 우천으로 인한 환불 및 날짜 변경 불가합니다.
+						<br>- 천재지변 또는 기상악화 시, 현장(캠핑장/펜션)상황과 정책에 따라 당일 오전 현장 판단하에 연기 또는 취소 결정됩니다.
+						<br>- 코로나 등 전염병 관련 예약 취소는 병원/행정기관 등 유관기관에서 발급한 '예약자 본인 확인 가능한 증빙 서류 제출 시' 업체와 협의 후 가능합니다.
+						<br>- 사전 협의 없이 예약자가 직접 예약 취소 시 환불 규정에 따라 환불되며, 결제업체(결제수단)의 정책에 따라 취소수수료 환불이 불가할 수 있습니다.
+						<br>- 취소 시 결제금액에서 취소수수료를 제외한 금액이 환불되며, 취소수수료는 총 결제금액 기준으로 책정됩니다.
+						<br>- 취소 신청 후 간편결제 사업자 또는 은행/신용카드사에 따라 환불 절차에 일정 시간이 소요됩니다.
+						<br>- 영업일 기준(토/일/공휴일 제외)으로 실시간 계좌이체 2~3일, 신용카드 3~5일 소요됩니다.
+						<br>- 환불 관련 자세한 문의는 고객센터(070-4336-1824)로 문의하시기 바랍니다.
+						<br>- 취소수수료는 아래와 같습니다.	
+    				</div>
+    				
+    				
+   					<div>
+   						<div style="display: flex;">
+							<input type="checkbox" name="chk">
+							<h6 id="slideToggleBtn2"><b>&nbsp; 이용 시 주의사항에 동의합니다. ▼ </b></h6>
+						</div>
+   					</div>
+   					
+    				<div id="divBox2" style="font-size: 12px">
+    					[알립니다]<br>
+						ㅁ 입실시간 안내 입실시간 : 13:00 ~ 19:00 퇴실시간 : 11:00 - 캠핑장 내 전 지역 금연구역입니다. - 캠핑장 내 차량은 시속 20Km 이하로 서행하시고, 늦은 시간에는 차량 이동 자제를 부탁드립니다. - 폭죽, 풍등 사용 불가. (화재 위험) - 밀폐된 곳에서 화로, 가스 사용 금지.(일산화탄소 중독 우려) - 고전력의 전자 제품은 감전, 화재 위험으로 사용 불가. (사이트 당 사용량은 600Kwh 이하) - 야외에 진드기와,벌레,야생 고양이가 많으니 개인 위생과 안전에 각별히 주의. - CCTV 설치되어있습니다. - 뒷정리 및 잔불 정리. 바베큐 사용 후 숯과 재는 불씨가 꺼진 것을 확인 후, 전용 숯(재) 수거함에 배출. - 폐수는 반드시 지정된 개수대에 배출. 캠핑장 바닥에 버릴시 토양이 오염되어 악취가 발생됩니다. -퇴실시 쓰레기를 분리수거쓰레기봉투(일반쓰레기,음식물쓰레기,재활용쓰레기)에 넣어 분리수거함에 버려주시고 주변을 깨끗이 정리해 주십시요(쓰레기봉투는 매점에서 판매합니다) - 이용객의 소유물에 대한 유실, 피해에 대한 책임과 이용객의 부주의로 인한 사고에 대한 책임은 이용객에게 있습니다. - 캠핑장 이용 중에 시설물을 파손시켰을 때에는 별도로 말씀해 주셔야 합니다.
+						<br>
+						<br>[예약 공통 주의사항]
+						<br>- 예약관리는 특성상 약간의 시간차에 의하여 오차가 발생할수 있습니다.
+						<br>- 오차에 의한 중복예약 발생시 먼저 예약된 예약건이 우선시 되며 이 경우, 취소수수료 없이 전액 환불처리됩니다.
+						<br>- 숙소의 요청에 따라 일부 요금은 현장에서 결제가 진행될 수 있습니다.
+						<br>- 각 숙박시설 정보는 예약을 위한 참고 자료입니다. 숙박시설 내 자체 변동이나 기타 사유로 인해 실제와 차이가 있을 수 있으며, 이에 대해 캠핑톡(주)는 책임을 지지 않습니다.
+						<br>- 고객님의 요청사항은 숙박시설에 전달되나, 최종 반영 여부는 예약하신 숙박시설의 결정사항이므로 캠핑톡(주)에서 보장할 수 없는 사항임을 유의하여 주시기 바랍니다.
+						<br>- 객실요금은 기준인원에 대한 요금이며 인원 추가시 추가요금이 발생하며 숙소 사정에 따라 현장결제 할 수도 있습니다. 최대인원 이외의 인원은 입실은 불가합니다.
+						<br>- 예약시 신청하신 인원이외에 추가인원은 입실이 거부될 수 있습니다. 예약인원 초과로 인한 입실 거부시 환불 불가 정책이 적용되오니, 유의하시기 바랍니다.
+						<br>- 예약 이후 모든 변경은 해당 예약 취소후 다시 예약하셔야 합니다. 예약변경을 위한 취소시에도 취소수수료가 부과되오니 신중하게 예약하시기 바랍니다.
+    				</div>
+    				
+   					<div>
+   						<div style="display: flex;">
+							<input type="checkbox" name="chk">
+							<h6 id="slideToggleBtn3"><b>&nbsp; 개인 정보 수집 및 이용에 동의합니다. ▼ </b></h6>
+						</div>
+   					</div>
+   					
+    				<div id="divBox3" style="font-size: 12px">
+    					- 분류 : 필수정보
+						<br />- 수집 및 이용동의목적 : 계약의 이행 및 서비스 제공, 예약, 구매, 관심상품 내역, 결제대금의 청구, 상담, 불만, 민원처리, 고지/안내사항 전달, 상품/서비스 이용실적 정보 통계 분석, 상품/서비스 서비스 개선 및 추천, 불법 · 부정이용방지, 개인정보 유효기간제 준수
+						<br />- 항목 : 예약내역(예약일시, 결제금액, 업체명), 디바이스 ID, 휴대폰 번호, 서비스이용기록, IP 주소, 접속로그, Cookie, 광고식별자, 단말기 OS와 버전, 단말기 모델명, 브라우저 버전, 예약자 및 구매자의 이름, 휴대폰 번호, (필요한 서비스의 경우)생년월일, (예약자와 방문자가 다른 경우) 방문자 및 탑승자의 이름, 휴대폰 번호, (필요한 서비스의 경우)생년월일, (예약확인서 발급 시) 예약자의 이메일 주소, (현금 환불 요청 시) 계좌번호 및 예금주명
+						<br />- 보유 및 이용기간 : 이용종료일로부터 상담 등 민원처리, 정산 및 환불 처리를 위해 30일 후 삭제 [관계법령에 따라 보존할 필요가 있는 경우 해당 법령에서 요구하는 기한까지 보관 (예: 구매 회원의 경우 5년간, IP 주소의 경우 3개월)]
+					</div>
+    				
+   					<div>
+   						<div style="display: flex;">
+							<input type="checkbox" name="chk">
+							<h6 id="slideToggleBtn4"><b>&nbsp; 개인 정보 제 3자 제공에 동의합니다. ▼ </b></h6>
+						</div>
+   					</div>
+   					
+    				<div id="divBox4" style="font-size: 12px">
+    				- 제공받는 자 : 포천 울미숲 오토캠핑장 (상호 : 울미숲야영장)
+					<br />- 제공 목적 : 예약 · 구매한 상품 · 서비스의 제공 및 계약의 이행(이용자 및 이용정보 확인, 정산 등), 민원처리 등 소비자 분쟁해결
+					<br />- 제공 항목 : 예약번호, 예약자 정보(예약자명, 휴대폰 번호) 또는 방문자 정보(방문자명, 휴대폰 번호)
+					<br />- 이용 및 보유기간 : 개인정보 이용목적 달성 시까지
+					<br />- 단, 관계법령에 의하여 보존할 필요성이 있는 경우 그 시점까지 보존 후 지체 없이 파기
+					<br />- 위 개인정보 제3자 제공 동의를 거부할 수 있으며, 거부할 경우 서비스 이용이 제한됩니다.
+    				</div>
+    				
+   					<div>
+   						<div style="display: flex;">
+							<input type="checkbox" name="chk">
+							<h6 id="slideToggleBtn5"><b>&nbsp; 예약자는 성인이며, 서비스 이용약관에 동의합니다. ▼ </b></h6>
+						</div>
+   					</div>
+   					
+    				<div id="divBox5" style="font-size: 12px ">
+    				- 고객님께서는 전자상거래법 제8조 2항에 따른 위의 고지사항(이용 시 주의사항, 취소수수료 정책 등) 및 서비스 이용약관을 확인하고 이에 동의합니다.
+					<br />- 이용 약관은 사이트 하단의 "이용약관"에서 확인가능합니다.
+					<br />- 만 19세가 되는 해의 1월 1일을 맞지하지 않으신 고객님께서는 예약이 불가능합니다. 또한 동법 30조 8항에 의거 미성년자 혼숙은 법령으로 엄격히 금지되어있습니다.
+    				</div>
+				</div>
+				<div id="main_reservation">
+		  			<div class="main_table_reservation">	
+						<span class="main_reserv5">
+						<input type="hidden" th:value="${userid}" th:id="id"> 
+						<input type="hidden" th:value="${rvo.roomidx}" th:id="roomidx"> 
+						<input type="hidden" th:value="${cvo.name}" th:id="name"> 
+						<input type="hidden" th:value="${rvo.roomname}" th:id="roomname"> 
+						<input type="hidden" th:value="insert" th:id="mode"> 
+						<input type="button" onclick="reservCheck()" value=" 예약하기 "  id="reservButton"  class="button" style="width: 100%; height: 60px;  background-color: #DAEDCC;" disabled="disabled">
+						</span>		 
+					</div>
+				</div>
+		</div>
+	</div>
+</body>
+</html>

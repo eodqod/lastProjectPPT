@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.human.camping.dao.ReservationDAO">
+	<!-- 전체 개수 구하기 -->
+	<select id="selectReservationCount" resultType="int">
+		select count(*) from reservation
+	</select>
+	
+	<!-- 예약 1개 보기 -->
+	<select id="selectReservation" parameterType="int" resultType="ReservationVO">
+		 select * from reservation where roomidx=#{roomidx} 
+	</select>
+	
+	<!-- 나의 예약목록 보기 -->
+	<select id="selectMyReservation" parameterType="string" resultType="ReservationVO">
+		 select * from reservation where id = #{id}
+		
+	</select>
+	
+	<!-- 예약하기 -->
+	<insert id="insertReservation" parameterType="ReservationVO">
+		insert into reservation values(#{id},#{roomidx},#{name},#{roomname},#{total},#{startday},#{endday})
+	</insert>
+	
+	<!-- 예약 취소하기 -->
+	<delete id="deleteReservation" parameterType="ReservationVO">
+		delete from reservation where roomidx = #{roomidx} and id = #{id} and total = #{total} and startday = #{startday} and endday = #{endday}
+	</delete>
+	
+	<!-- 1 페이지 구하기 -->
+	<select id="selectReservationList" parameterType="hashmap" resultType="ReservationVO">
+		select * from (select rownum rnum, R.* from (select * from reservation order by idx desc) R where
+		<![CDATA[ rownum <= #{endNo} ]]>
+		) Q where
+		<![CDATA[ rnum >= #{startNo} ]]>
+	</select>
+	
+	<!-- 업체 한개 가져오기(예약시) -->
+	<select id="selectByIdx" parameterType="int" resultType="CompanyVO">
+		select * from company where idx=#{idx}
+	</select>
+	
+		<!-- 1 페이지 구하기 -->
+	<select id="selectReservationRoomList" parameterType="int" resultType="ReservationVO">
+		select  * from reservation where roomidx = #{roomidx}
+	</select>
+</mapper>

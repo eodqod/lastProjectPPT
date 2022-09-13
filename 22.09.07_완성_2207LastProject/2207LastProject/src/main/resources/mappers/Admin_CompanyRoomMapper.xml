@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.human.camping.dao.Admin_CompanyRoomDAO">
+	
+	<!-- 업체당 방 목록 가져오기 -->
+	<select id="selectCompanyRoomList" parameterType="int" resultType="RoomVO">
+		SELECT * FROM company_room WHERE idx=(SELECT idx FROM company c WHERE idx=#{idx})
+		 
+	</select>
+	
+	<!-- 업체 방 1개 가져오기 -->
+	<select id="selectByRoomIdx" parameterType="int" resultType="RoomVO">
+		select * from company_room where roomidx=#{roomidx}
+	</select>
+	
+	<!-- 방 저장하기 -->
+	<insert id="insert" parameterType="RoomVO">
+		insert into company_room
+			(roomidx, idx, roomname, minpeople, maxpeople, price, r_check, content)
+		values
+			(company_room_roomidx_seq.nextval, #{idx}, #{roomname}, #{minpeople}, #{maxpeople}, #{price}, #{r_check}, #{content})
+	</insert>
+
+	<!-- 방 수정하기 -->
+	<update id="update" parameterType="RoomVO">
+		update company_room set roomname=#{roomname}, minpeople=#{minpeople}, maxpeople=#{maxpeople}, price=#{price}, r_check=#{r_check}, content=#{content} where roomidx=#{roomidx}
+	</update>
+
+	<!-- 방 삭제하기 -->
+	<delete id="delete" parameterType="int">
+		delete from company_room where roomidx=#{roomidx}
+	</delete>
+</mapper>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.human.camping.dao.RoomDAO">
+	<!-- 전체 개수 구하기 -->
+	<select id="selectRoomCount" resultType="int">
+		select count(*) from company_room
+	</select>
+	
+	<!-- 방 1개 보기 -->
+	<select id="selectRoom" parameterType="int" resultType="RoomVO">
+		 select * from company_room where roomidx=#{roomidx}
+	</select>
+	
+	<!-- 방 추가 -->
+	<insert id="insertRoom" parameterType="RoomVO">
+		insert into company_room values(company_room_roomidx_seq.nextval,#{idx},#{roomname},#{minpeople},#{maxpeople},#{price},0,#{content},NULL,NULL)
+	</insert>
+	
+	<!-- 방 수정 -->
+	<update id="updateRoom" parameterType="RoomVO">
+		update company_room set roomname=#{roomname}, minpeople=#{minpeople}, maxpeople=#{maxpeople}, price=#{price}, content=#{content} where roomidx=#{roomidx}
+	</update>
+	
+	<!-- 방 삭제 -->
+	<delete id="deleteRoom" parameterType="RoomVO">
+		delete from company_room where roomidx=#{roomidx}
+	</delete>
+	
+	<!-- 방 r_check 변s경하기 -->
+	<update id="checkUpdate" parameterType="int">
+		update company_room set r_check=#{r_check} where roomidx=#{roomidx}
+	</update>
+	
+	<!-- 해당 회사의 방 리스트 구하기 -->
+	<select id="selectRoomList" parameterType="int" resultType="RoomVO">
+		select * from company_room where idx=#{idx}
+	</select>
+	
+	<!-- 해당 방의 업체 아이디 가져오기 -->
+	<select id="companyidx" parameterType="int" resultType="int">
+		select idx from company_room where roomidx=#{roomidx}
+	</select>
+	
+</mapper>

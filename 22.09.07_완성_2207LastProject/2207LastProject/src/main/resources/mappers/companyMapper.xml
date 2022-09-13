@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.human.camping.dao.SearchDAO">
+	<!-- namespace를 인터페이스 이름과 일치 시켜야 한다. -->
+	<!-- 전체 업체수 구하기 -->
+	<select id="selectCompanyCount" resultType="int">
+		select count(*) from company
+	</select>
+	
+	<!-- 업체 한개 가져오기(예약시) -->
+	<select id="selectByIdx" parameterType="int" resultType="CompanyVO">
+		select * from company where idx=#{idx}
+	</select>
+	
+	<!-- 업체 리스트가져오기(검색시) 지역코드-->
+	<select id="searchByareacode" parameterType="int" resultType="CompanyVO">
+		select * from company where areacode=#{areacode} 
+	</select>
+	<select id="searchCount" resultType="int" parameterType="map">
+			select
+	 			count(*) 
+	 			from company
+			<where>
+				and areacode=#{areacode}
+				<if test="detailcode !=null">
+					and detailcode=#{detailcode}
+				</if>
+				<!-- 검색키워드가 있을때 -->
+				<if test='keyword != null'>
+					and name like '%'||#{keyword}||'%'				
+				</if>
+				
+					
+				<if test='eco !=null'>
+				and
+					<foreach collection="eco" item="eco" open="eco in(" close=")" separator=",">
+						#{eco}
+					</foreach>
+				</if>
+				<if test='roomtype != null'>
+				and
+					<foreach collection="roomtype" item="roomtype" open="roomtype in(" close=")" separator=",">
+						#{roomtype}
+					</foreach>
+				</if>
+				<if test='theme != null'>
+				and
+					<foreach collection="theme" item="theme" open="theme in(" close=")" separator=",">
+						#{theme}
+					</foreach>
+				</if>
+			</where>
+		
+	</select>
+	<select id="searchBycode" parameterType="hashmap" resultType="CompanyVO">
+		select 
+		* 
+		from (select 
+	 			rownum rnum, 
+	 			R.*
+	 		from
+	 			(select
+	 			c.* 
+	 			from company c 
+			<where>
+				and areacode=#{areacode}
+				<if test="detailcode !=null">
+					and detailcode=#{detailcode}
+				</if>
+				<!-- 검색키워드가 있을때 -->
+				<if test='keyword != null'>
+					and c.name like '%'||#{keyword}||'%'				
+				</if>
+					
+				<if test='eco !=null'>
+				and
+					<foreach collection="eco" item="eco" open="eco in(" close=")" separator=",">
+						#{eco}
+					</foreach>
+				</if>
+				<if test='roomtype != null'>
+				and
+					<foreach collection="roomtype" item="roomtype" open="roomtype in(" close=")" separator=",">
+						#{roomtype}
+					</foreach>
+				</if>
+				<if test='theme != null'>
+				and
+					<foreach collection="theme" item="theme" open="theme in(" close=")" separator=",">
+						#{theme}
+					</foreach>
+				</if>
+			</where>
+		order by c.idx DESC) R where
+	 			<![CDATA[
+ 	 				rownum <= #{endNo} 
+ 	 			]]> 
+			) Q where
+ 			<![CDATA[
+  				rnum >= #{startNo} 
+  			]]> 
+			
+	</select>
+	
+	<!-- 업체 리스트(검색시) 지역코드 , 상세코드 페이징
+	<select id="searchBycode" parameterType="hashmap" resultType="CompanyVO">
+		<![CDATA[
+		select * from 
+		
+		(select /*+INDEX_DESC(company idx)*/ rownum as rn, idx 
+			
+			from company where rownum<= #{pageNum} * #{amount} and (areacode=#{areacode} and detailcode=#{detailcode) ) 
+			
+		where rn >(#{pageNum}-1) * #{amount}
+		]]>		
+	</select>
+	-->
+	<select id="totalCompany" resultType="CompanyVO">
+		select latitude, longitude, name, idx from company
+	</select>
+	
+</mapper>

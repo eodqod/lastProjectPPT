@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.human.camping.dao.FileBoardDAO">
+	<!-- namespace를 인터페이스 이름과 일치 시켜야 한다. -->
+	
+	<!-- 1. 전체 개수 구하기 -->
+	<select id="selectCount" parameterType="hashmap" resultType="int">
+		select count(*) from fileBoard
+			<where>
+				<if test="keyword != null">
+					and subject like '%'||#{keyword}||'%'		
+				</if>
+			</where>
+	</select>
+	<!-- 2. 글 1개 구하기 -->
+	<select id="selectByIdx" parameterType="int" resultType="FileBoardVO">
+		select * from fileBoard where idx=#{idx}
+	</select>
+	<!-- 3. 글 1페이지 구하기 -->
+	<select id="selectList" parameterType="hashmap" resultType="FileBoardVO">
+		select 
+ 			*
+ 		from
+	 		(select 
+	 			rownum rnum, R.*
+	 		from
+	 			(select * from fileBoard
+	 			
+				<where>
+					<if test="keyword != null">
+						and subject like '%'||#{keyword}||'%'		
+					</if>
+				</where>
+	 			order by idx desc) R
+	 		where
+	 			<![CDATA[
+	 				rownum <= #{endNo}
+	 			]]>
+			) Q
+		where
+ 			<![CDATA[
+ 			rnum >= #{startNo}
+ 			]]>
+	</select>
+	<!-- 4. 저장 하기 -->
+	<insert id="insert" parameterType="FileBoardVO">
+		insert into fileBoard 
+			(idx, id, subject, content, regDate, clickCount)
+		values
+			(fileBoard_idx_seq.nextval, 'admin', #{subject}, #{content}, SYSDATE, 0)
+	</insert>
+	<!-- 5. 수정 하기 -->
+	<update id="update" parameterType="FileBoardVO">
+		update fileBoard set subject=#{subject}, content=#{content}, regDate=SYSDATE where idx=#{idx}
+	</update>
+	<!-- 6. 삭제 하기 -->
+	<delete id="delete" parameterType="int">
+		delete from fileBoard where idx=#{idx}
+	</delete>
+	<!-- 7. 조회수-->
+	<update id="clickCount" parameterType= "int">	
+		update fileBoard set clickCount = clickCount + 1 where idx=#{idx}
+	</update>
+</mapper>
